@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>🌾 Cuaderno de Danzas Folclóricas</title>
+  <style>
+    :root {
+      --bg: #18181b; --panel: #27272a; --hover: #3f3f46; --text: #fafafa;
+      --text-muted: #a1a1aa; --accent: #f59e0b; /* Color poncho criollo */
+      --badge-compas: #d97706; --border: #3f3f46;
+    }
+    body.theme-light {
+      --bg: #fafafa; --panel: #ffffff; --hover: #f4f4f5; --text: #18181b;
+      --text-muted: #71717a; --accent: #b45309; --badge-compas: #d97706; --border: #e4e4e7;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); height: 100vh; display: flex; overflow: hidden; }
+
+    /* Layout */
+    .app { display: flex; width: 100vw; height: 100vh; position: relative; }
+
+    /* Sidebar */
+    .sidebar { width: 320px; background: var(--panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; z-index: 40; transition: transform 0.25s ease; }
+    .side-header { padding: 1rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 1.1rem; }
+    .side-search { padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 0.5rem; }
+    .search-input { width: 100%; padding: 0.55rem 0.75rem; border-radius: 6px; border: 1px solid var(--border); background: var(--bg); color: var(--text); outline: none; }
+    .search-input:focus { border-color: var(--accent); }
+    .filter-tabs { display: flex; gap: 0.5rem; }
+    .filter-tab { background: var(--hover); border: none; padding: 0.25rem 0.65rem; border-radius: 12px; font-size: 0.75rem; color: var(--text-muted); cursor: pointer; }
+    .filter-tab.active { background: var(--accent); color: #18181b; font-weight: bold; }
+
+    .dance-list { flex: 1; overflow-y: auto; list-style: none; padding: 0.5rem; }
+    .dance-item { padding: 0.75rem; border-radius: 8px; margin-bottom: 0.25rem; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+    .dance-item:hover { background: var(--hover); }
+    .dance-item.active { background: rgba(245, 158, 11, 0.15); border: 1px solid var(--accent); }
+    .dance-title { font-weight: 600; font-size: 0.95rem; }
+    .dance-meta { font-size: 0.78rem; color: var(--text-muted); margin-top: 2px; }
+    .fav-btn { background: none; border: none; font-size: 1.15rem; cursor: pointer; color: var(--text-muted); padding: 0.2rem; }
+    .fav-btn.active { color: #eab308; }
+
+    .side-footer { padding: 0.75rem; border-top: 1px solid var(--border); display: flex; gap: 0.5rem; }
+    .btn { background: var(--hover); color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 0.45rem 0.75rem; cursor: pointer; font-size: 0.82rem; display: inline-flex; align-items: center; gap: 0.35rem; }
+    .btn:hover { border-color: var(--accent); }
+    .btn-primary { background: var(--accent); color: #18181b; border: none; font-weight: bold; }
+
+    /* Main Content */
+    .main { flex: 1; display: flex; flex-direction: column; height: 100vh; position: relative; overflow: hidden; }
+    .topbar { min-height: 60px; padding: 0.5rem 1rem; background: var(--panel); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
+    .topbar-info h1 { font-size: 1.25rem; font-weight: 700; color: var(--accent); }
+    .topbar-info span { font-size: 0.85rem; color: var(--text-muted); }
+    .controls { display: flex; align-items: center; gap: 0.4rem; }
+
+    /* Ficha Coreográfica */
+    .sheet-wrap { flex: 1; overflow-y: auto; padding: 1.5rem 2rem 5rem; max-width: 850px; margin: 0 auto; width: 100%; }
+    .sheet-card { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; margin-bottom: 1.25rem; }
+    .sheet-title { font-size: 0.95rem; font-weight: bold; color: var(--accent); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.4rem; }
+
+    .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.75rem; margin-bottom: 1rem; }
+    .info-item { background: var(--hover); padding: 0.6rem 0.8rem; border-radius: 6px; }
+    .info-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600; }
+    .info-val { font-size: 0.9rem; font-weight: 500; margin-top: 2px; }
+
+    /* Figuras con Compases */
+    .figure-row { display: flex; align-items: center; justify-content: space-between; padding: 0.65rem 0.85rem; border-bottom: 1px solid var(--border); font-size: 0.95rem; }
+    .figure-row:last-child { border-bottom: none; }
+    .compas-badge { background: var(--badge-compas); color: #fff; font-size: 0.75rem; font-weight: 800; padding: 0.2rem 0.55rem; border-radius: 20px; white-space: nowrap; }
+
+    .notes-box { font-size: 0.9rem; line-height: 1.6; white-space: pre-wrap; color: var(--text); background: var(--hover); padding: 0.85rem; border-radius: 8px; }
+
+    /* Modales */
+    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 100; align-items: center; justify-content: center; padding: 1rem; }
+    .modal.open { display: flex; }
+    .modal-box { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; width: 100%; max-width: 550px; max-height: 90vh; display: flex; flex-direction: column; }
+    .modal-head { padding: 1rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; font-weight: bold; }
+    .modal-body { padding: 1rem; overflow-y: auto; display: flex; flex-direction: column; gap: 0.85rem; }
+    .modal-foot { padding: 0.8rem 1rem; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 0.5rem; }
+    .form-group { display: flex; flex-direction: column; gap: 0.35rem; }
+    .form-group label { font-size: 0.82rem; color: var(--text-muted); font-weight: 600; }
+    .form-group input, .form-group textarea { padding: 0.6rem; border-radius: 6px; border: 1px solid var(--border); background: var(--bg); color: var(--text); outline: none; }
+    .form-group textarea { min-height: 140px; font-family: inherit; font-size: 0.9rem; }
+
+    .mobile-bar { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--panel); border-top: 1px solid var(--border); padding: 0.6rem; justify-content: space-around; z-index: 35; }
+    .btn-mob { background: none; border: none; color: var(--text); display: flex; flex-direction: column; align-items: center; font-size: 0.72rem; cursor: pointer; gap: 0.2rem; }
+    .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 39; }
+    .toast { position: fixed; bottom: 4.5rem; left: 50%; transform: translateX(-50%); background: #27272a; color: #fff; border: 1px solid var(--accent); padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.85rem; opacity: 0; pointer-events: none; transition: opacity 0.2s; z-index: 200; }
+    .toast.show { opacity: 1; }
+
+    @media (max-width: 800px) {
+      .sidebar { position: fixed; top: 0; bottom: 0; left: 0; transform: translateX(-100%); }
+      .sidebar.open { transform: translateX(0); }
+      .overlay.open { display: block; }
+      .mobile-bar { display: flex; }
+      .desktop-only { display: none !important; }
+      .sheet-wrap { padding: 1rem 1rem 5.5rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div id="overlay" class="overlay"></div>
+
+    <!-- Menú Lateral -->
+    <aside id="sidebar" class="sidebar">
+      <div class="side-header">
+        <span>🌾 Coreografías</span>
+        <button id="btnCloseSide" class="btn" style="padding: 0.2rem 0.5rem;">✕</button>
+      </div>
+      <div class="side-search">
+        <input type="text" id="search" class="search-input" placeholder="Buscar danza (ej: Gato, Zamba...)">
+        <div class="filter-tabs">
+          <button class="filter-tab active" data-filter="all">Todas (<span id="count">0</span>)</button>
+          <button class="filter-tab" data-filter="favs">⭐ Ensayando</button>
+        </div>
+      </div>
+      <ul id="danceList" class="dance-list"></ul>
+      <div class="side-footer">
+        <button id="btnNewDance" class="btn btn-primary" style="flex: 1;">➕ Nueva Danza</button>
+        <button id="btnBackup" class="btn" title="Descargar o cargar danzas para pasar al celular">💾 Respaldo</button>
+      </div>
+    </aside>
+
+    <!-- Ficha de la Danza -->
+    <main class="main">
+      <header class="topbar">
+        <div style="display: flex; align-items: center; gap: 0.6rem;">
+          <button id="btnToggleSide" class="btn">☰ <span class="desktop-only">Danzas</span></button>
+          <div class="topbar-info">
+            <h1 id="danceTitle">Elige una danza</h1>
+            <span id="danceClass">-</span>
+          </div>
+        </div>
+        <div class="controls">
+          <button id="btnPrev" class="btn" title="Anterior">⏮️</button>
+          <button id="btnNext" class="btn" title="Siguiente">⏭️</button>
+          <button id="btnTheme" class="btn" title="Tema">🌙</button>
+          <button id="btnEdit" class="btn" title="Editar ficha">✏️ Editar</button>
+        </div>
+      </header>
+
+      <div class="sheet-wrap">
+        <!-- Elementos y Ubicación -->
+        <div class="sheet-card">
+          <div class="sheet-title">📍 Elementos y Ubicación</div>
+          <div class="info-grid">
+            <div class="info-item">
+              <div class="info-label">Ubicación Inicial</div>
+              <div id="danceLocation" class="info-val">-</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">Elemento / Accesorios</div>
+              <div id="danceElements" class="info-val">-</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">Introducción (Compases)</div>
+              <div id="danceIntro" class="info-val">-</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Figuras Coreográficas -->
+        <div class="sheet-card">
+          <div class="sheet-title">💃 Coreografía (Primera y Segunda)</div>
+          <div id="figuresContainer"></div>
+        </div>
+
+        <!-- Notas del Ensayo -->
+        <div class="sheet-card">
+          <div class="sheet-title">📝 Notas del Ensayo / Pareja</div>
+          <div id="danceNotes" class="notes-box">Sin notas registradas.</div>
+        </div>
+      </div>
+
+      <!-- Barra Celular -->
+      <footer class="mobile-bar">
+        <button id="mobMenu" class="btn-mob"><span>📚</span><span>Danzas</span></button>
+        <button id="mobPrev" class="btn-mob"><span>⏮️</span><span>Ant.</span></button>
+        <button id="mobNext" class="btn-mob"><span>⏭️</span><span>Sig.</span></button>
+        <button id="mobEdit" class="btn-mob"><span>✏️</span><span>Editar</span></button>
+      </footer>
+    </main>
+  </div>
+
+  <!-- Modal Crear / Editar -->
+  <div id="danceModal" class="modal">
+    <div class="modal-box">
+      <div class="modal-head">
+        <span id="modalTitle">Nueva Danza</span>
+        <button id="btnCloseModal" class="btn">✕</button>
+      </div>
+      <form id="danceForm">
+        <div class="modal-body">
+          <input type="hidden" id="editId">
+          <div class="form-group"><label>Nombre de la Danza *</label><input type="text" id="inTitle" required placeholder="Ej: Chacarera Simple"></div>
+          <div class="form-group"><label>Clasificación / Carácter</label><input type="text" id="inClass" placeholder="Ej: Pareja suelta e independiente, picaresca"></div>
+          <div class="form-group"><label>Ubicación Inicial</label><input type="text" id="inLocation" placeholder="Ej: Enfrentados en los extremos de la mediana"></div>
+          <div class="form-group"><label>Elementos (Pañuelo, Castañetas, etc.)</label><input type="text" id="inElements" placeholder="Ej: Castañetas y paso básico"></div>
+          <div class="form-group"><label>Introducción (Compases)</label><input type="text" id="inIntro" placeholder="Ej: 6 u 8 compases"></div>
+          <div class="form-group">
+            <label>Figuras (Una por línea: Figura - X compases)</label>
+            <textarea id="inFigures" required placeholder="Ejemplo:&#10;Vuelta entera - 8 compases&#10;Giro - 4 compases&#10;Zapateo y zarandeo - 8 compases&#10;Media vuelta - 4 compases&#10;Giro final y coronación - 4 compases"></textarea>
+          </div>
+          <div class="form-group"><label>Notas personales / Variaciones</label><textarea id="inNotes" placeholder="Detalles de brazos, miradas, figuras del ballet..."></textarea></div>
+        </div>
+        <div class="modal-foot">
+          <button type="button" id="btnDelete" class="btn" style="color: #ef4444; margin-right: auto; display: none;">Eliminar</button>
+          <button type="button" id="btnCancel" class="btn">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Respaldo (Para pasar danzas de PC a Celular) -->
+  <div id="backupModal" class="modal">
+    <div class="modal-box">
+      <div class="modal-head"><span>Copia de Respaldo</span><button id="btnCloseBackup" class="btn">✕</button></div>
+      <div class="modal-body">
+        <p style="font-size: 0.85rem; color: var(--text-muted);">Descarga tus danzas para guardarlas o pasarlas a tu celular por WhatsApp:</p>
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+          <button id="btnExport" class="btn btn-primary">📥 Descargar Archivo JSON</button>
+          <button id="btnReset" class="btn">🔄 Restaurar Ejemplos</button>
+        </div>
+        <hr style="border: 0; border-top: 1px solid var(--border); margin: 0.5rem 0;">
+        <label style="font-size: 0.82rem; color: var(--text-muted);">Cargar archivo de respaldo en este dispositivo:</label>
+        <input type="file" id="inFile" accept=".json">
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    const DEFAULT_DANCES = [
+      {
+        id: "gato",
+        title: "Gato",
+        category: "Pareja suelta e independiente • Picaresca",
+        location: "Enfrentados en los extremos de la mediana",
+        elements: "Castañetas, paso básico, zapateo y zarandeo",
+        intro: "8 compases (¡Adentro!)",
+        favorite: true,
+        figures: `Vuelta entera - 8 compases
+Giro - 4 compases
+Zapateo y zarandeo - 8 compases
+Media vuelta - 4 compases
+Zapateo y zarandeo - 8 compases
+Giro final y coronación - 4 compases
+(¡Segunda parte igual, iniciando desde bases opuestas!)`,
+        notes: `En la coronación la pareja se encuentra en el centro, él toma el sombrero con mano izquierda y corona a la dama con la derecha. Castañetas firmes a la altura de los ojos.`
+      },
+      {
+        id: "chacarera-simple",
+        title: "Chacarera Simple",
+        category: "Pareja suelta e independiente • Viva y alegre",
+        location: "Enfrentados en los extremos de la mediana",
+        elements: "Castañetas, paso básico, zapateo y zarandeo",
+        intro: "6 u 8 compases",
+        favorite: true,
+        figures: `Avance y retroceso - 4 compases
+Giro - 4 compases
+Vuelta entera - 8 compases
+Zapateo y zarandeo - 8 compases
+Vuelta entera - 8 compases
+Zapateo y zarandeo - 8 compases
+Media vuelta - 4 compases
+Giro final y coronación - 4 compases
+(¡Segunda parte idéntica!)`,
+        notes: `El avance y retroceso se realiza hacia el centro mirándose. Mantener el ritmo constante y la elegancia criolla en el zarandeo.`
+      },
+      {
+        id: "zamba-tradicional",
+        title: "Zamba Tradicional",
+        category: "Pareja suelta e independiente • Amoresca y señorial",
+        location: "Enfrentados en los extremos de la mediana",
+        elements: "Pañuelo blanco, paso de zamba, paso caminado",
+        intro: "8 o 12 compases (Espera y juego de pañuelos)",
+        favorite: true,
+        figures: `Vuelta entera con pañuelo - 16 compases
+Arresto simple - 4 compases
+Media vuelta - 4 compases
+Arresto doble - 8 compases
+Media vuelta - 4 compases
+Arresto - 8 compases
+Media vuelta - 4 compases
+Giro final y coronación - 4 compases`,
+        notes: `El pañuelo nunca cae, siempre dibuja la conversación entre el varón y la dama. El arresto es de miradas, cortejo y respeto.`
+      },
+      {
+        id: "escondido",
+        title: "Escondido",
+        category: "Pareja suelta e independiente • Picaresca de esquinas",
+        location: "Enfrentados en esquinas opuestas",
+        elements: "Castañetas, pañuelo (opcional en palmas), zapateo solo",
+        intro: "8 compases",
+        favorite: false,
+        figures: `Cuatro esquinas - 16 compases (4c cada esquina)
+Vuelta entera - 8 compases
+La dama se esconde (en cuclillas/palmas) y el varón zapatea - 8 compases
+Vuelta entera - 8 compases
+El varón se esconde y la dama zarandea - 8 compases
+Media vuelta - 4 compases
+Giro final y coronación - 4 compases
+(¡En la Segunda, se esconde primero el varón!)`,
+        notes: `Al esconderse, quien acompaña toca palmas y busca con la mirada a su pareja. Mucho juego escénico.`
+      }
+    ];
+
+    const state = {
+      dances: [], curId: null, filter: 'all', search: ''
+    };
+
+    function init() {
+      const saved = localStorage.getItem('folclore_dances_data');
+      state.dances = saved ? JSON.parse(saved) : [...DEFAULT_DANCES];
+      renderList();
+      if (state.dances.length) selectDance(state.dances[0].id);
+      setupEvents();
+    }
+
+    function save() {
+      localStorage.setItem('folclore_dances_data', JSON.stringify(state.dances));
+      document.getElementById('count').textContent = state.dances.length;
+    }
+
+    function renderList() {
+      const q = state.search.toLowerCase();
+      const filtered = state.dances.filter(d => {
+        if (state.filter === 'favs' && !d.favorite) return false;
+        if (!q) return true;
+        return d.title.toLowerCase().includes(q) || d.category.toLowerCase().includes(q) || d.figures.toLowerCase().includes(q);
+      });
+
+      const list = document.getElementById('danceList');
+      list.innerHTML = '';
+      document.getElementById('count').textContent = state.dances.length;
+
+      filtered.forEach(d => {
+        const li = document.createElement('li');
+        li.className = `dance-item ${d.id === state.curId ? 'active' : ''}`;
+        li.innerHTML = `
+          <div>
+            <div class="dance-title">${escapeHTML(d.title)}</div>
+            <div class="dance-meta">${escapeHTML(d.category.split('•')[0])}</div>
+          </div>
+          <button class="fav-btn ${d.favorite ? 'active' : ''}">★</button>
+        `;
+        li.onclick = (e) => {
+          if (e.target.classList.contains('fav-btn')) {
+            d.favorite = !d.favorite;
+            save(); renderList(); return;
+          }
+          selectDance(d.id);
+          closeSide();
+        };
+        list.appendChild(li);
+      });
+    }
+
+    function selectDance(id) {
+      const d = state.dances.find(x => x.id === id);
+      if (!d) return;
+      state.curId = id;
+      document.getElementById('danceTitle').textContent = d.title;
+      document.getElementById('danceClass').textContent = d.category || '';
+      document.getElementById('danceLocation').textContent = d.location || 'No especificada';
+      document.getElementById('danceElements').textContent = d.elements || 'Castañetas y paso básico';
+      document.getElementById('danceIntro').textContent = d.intro || '8 compases';
+      document.getElementById('danceNotes').textContent = d.notes || 'Sin notas registradas.';
+
+      const container = document.getElementById('figuresContainer');
+      const lines = d.figures.split('\n').filter(l => l.trim().length > 0);
+      let html = '';
+
+      lines.forEach(line => {
+        const parts = line.split('-');
+        if (parts.length > 1) {
+          const name = parts[0].trim();
+          const compas = parts[1].trim();
+          html += `
+            <div class="figure-row">
+              <span>💃 ${escapeHTML(name)}</span>
+              <span class="compas-badge">${escapeHTML(compas)}</span>
+            </div>
+          `;
+        } else {
+          html += `<div style="padding: 0.6rem; color: var(--accent); font-weight: bold; font-size: 0.85rem; text-align: center;">${escapeHTML(line)}</div>`;
+        }
+      });
+
+      container.innerHTML = html;
+      renderList();
+    }
+
+    function openModal(isEdit) {
+      const m = document.getElementById('danceModal');
+      document.getElementById('modalTitle').textContent = isEdit ? 'Editar Danza' : 'Nueva Danza';
+      document.getElementById('btnDelete').style.display = isEdit ? 'inline' : 'none';
+      if (isEdit) {
+        const d = state.dances.find(x => x.id === state.curId);
+        document.getElementById('editId').value = d.id;
+        document.getElementById('inTitle').value = d.title;
+        document.getElementById('inClass').value = d.category || '';
+        document.getElementById('inLocation').value = d.location || '';
+        document.getElementById('inElements').value = d.elements || '';
+        document.getElementById('inIntro').value = d.intro || '';
+        document.getElementById('inFigures').value = d.figures || '';
+        document.getElementById('inNotes').value = d.notes || '';
+      } else {
+        document.getElementById('danceForm').reset();
+        document.getElementById('editId').value = '';
+      }
+      m.classList.add('open');
+      document.getElementById('inTitle').focus();
+    }
+
+    function saveDance(e) {
+      e.preventDefault();
+      const id = document.getElementById('editId').value;
+      const title = document.getElementById('inTitle').value.trim();
+      const category = document.getElementById('inClass').value.trim();
+      const location = document.getElementById('inLocation').value.trim();
+      const elements = document.getElementById('inElements').value.trim();
+      const intro = document.getElementById('inIntro').value.trim();
+      const figures = document.getElementById('inFigures').value.trim();
+      const notes = document.getElementById('inNotes').value.trim();
+
+      if (id) {
+        const d = state.dances.find(x => x.id === id);
+        Object.assign(d, { title, category, location, elements, intro, figures, notes });
+      } else {
+        const newId = 'd_' + Date.now();
+        state.dances.unshift({ id: newId, title, category, location, elements, intro, figures, notes, favorite: false });
+        state.curId = newId;
+      }
+      save();
+      selectDance(state.curId || id);
+      document.getElementById('danceModal').classList.remove('open');
+      toast('Danza guardada en el cuaderno');
+    }
+
+    function deleteDance() {
+      if (!confirm('¿Eliminar esta danza de tu cuaderno?')) return;
+      state.dances = state.dances.filter(x => x.id !== state.curId);
+      save();
+      document.getElementById('danceModal').classList.remove('open');
+      if (state.dances.length) selectDance(state.dances[0].id);
+      toast('Danza eliminada');
+    }
+
+    function toast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2000);
+    }
+
+    function closeSide() {
+      document.getElementById('sidebar').classList.remove('open');
+      document.getElementById('overlay').classList.remove('open');
+    }
+    function openSide() {
+      document.getElementById('sidebar').classList.add('open');
+      document.getElementById('overlay').classList.add('open');
+    }
+    function escapeHTML(s) {
+      return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function setupEvents() {
+      document.getElementById('btnToggleSide').onclick = openSide;
+      document.getElementById('btnCloseSide').onclick = closeSide;
+      document.getElementById('overlay').onclick = closeSide;
+      document.getElementById('mobMenu').onclick = openSide;
+
+      document.getElementById('search').oninput = (e) => { state.search = e.target.value; renderList(); };
+      document.querySelectorAll('.filter-tab').forEach(b => {
+        b.onclick = () => {
+          document.querySelectorAll('.filter-tab').forEach(x => x.classList.remove('active'));
+          b.classList.add('active');
+          state.filter = b.dataset.filter;
+          renderList();
+        };
+      });
+
+      document.getElementById('btnTheme').onclick = () => {
+        document.body.classList.toggle('theme-light');
+        toast('Tema cambiado');
+      };
+
+      document.getElementById('btnPrev').onclick = () => navDance(-1);
+      document.getElementById('mobPrev').onclick = () => navDance(-1);
+      document.getElementById('btnNext').onclick = () => navDance(1);
+      document.getElementById('mobNext').onclick = () => navDance(1);
+
+      document.getElementById('btnNewDance').onclick = () => openModal(false);
+      document.getElementById('btnEdit').onclick = () => openModal(true);
+      document.getElementById('mobEdit').onclick = () => openModal(true);
+      document.getElementById('btnCloseModal').onclick = () => document.getElementById('danceModal').classList.remove('open');
+      document.getElementById('btnCancel').onclick = () => document.getElementById('danceModal').classList.remove('open');
+      document.getElementById('danceForm').onsubmit = saveDance;
+      document.getElementById('btnDelete').onclick = deleteDance;
+
+      // Respaldo (Exportar e Importar JSON)
+      document.getElementById('btnBackup').onclick = () => document.getElementById('backupModal').classList.add('open');
+      document.getElementById('btnCloseBackup').onclick = () => document.getElementById('backupModal').classList.remove('open');
+      document.getElementById('btnExport').onclick = () => {
+        const blob = new Blob([JSON.stringify(state.dances, null, 2)], { type: 'application/json' });
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+        a.download = 'danzas_folclore_respaldo.json'; a.click();
+        toast('Respaldo descargado');
+      };
+      document.getElementById('btnReset').onclick = () => {
+        if (confirm('¿Restaurar las danzas de ejemplo?')) {
+          state.dances = [...DEFAULT_DANCES]; save(); renderList(); selectDance(state.dances[0].id);
+          document.getElementById('backupModal').classList.remove('open');
+          toast('Danzas de ejemplo restauradas');
+        }
+      };
+      document.getElementById('inFile').onchange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const r = new FileReader();
+        r.onload = (ev) => {
+          try {
+            state.dances = JSON.parse(ev.target.result);
+            save(); renderList(); selectDance(state.dances[0].id);
+            document.getElementById('backupModal').classList.remove('open');
+            toast('¡Danzas importadas con éxito!');
+          } catch(err) { alert('Archivo JSON inválido'); }
+        };
+        r.readAsText(file);
+      };
+    }
+
+    function navDance(dir) {
+      if (state.dances.length <= 1) return;
+      const idx = state.dances.findIndex(x => x.id === state.curId);
+      let next = idx + dir;
+      if (next < 0) next = state.dances.length - 1;
+      if (next >= state.dances.length) next = 0;
+      selectDance(state.dances[next].id);
+    }
+
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
